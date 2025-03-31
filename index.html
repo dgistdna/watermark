@@ -3,19 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DNA 워터마크 생성기기</title>
+    <title>DNA 워터마크 생성기</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
     <div class="center-container">
-        <h2>DNA 워터마크 생성기</h2>
+        <h2>Image Watermark Tool</h2>
         <input type="file" id="imageInput" multiple accept="image/*">
         <button onclick="processImages()">워터마크 추가</button>
-        <button id="downloadAll" style="display:none;" onclick="downloadAll()">전체 다운로드</button>
+        <button id="downloadAll" style="display:none;" onclick="downloadAll()">전체 다운로드(zip)</button>
         <div id="progressContainer"><div id="progressBar"></div></div>
     </div>
     <div id="preview"></div>
     
+    <div id="errorWindow" class="error-window" style="display: none;">
+        <p>Please upload at least one image before adding a watermark.</p>
+        <button onclick="closeErrorWindow()">OK</button>
+    </div>
+
     <script>
         let watermark = new Image();
         watermark.src = 'watermark.png';  // Sample watermark image
@@ -25,6 +31,11 @@
 
         function processImages() {
             const files = document.getElementById('imageInput').files;
+            if (files.length === 0) {
+                showErrorWindow();
+                return;
+            }
+            
             const preview = document.getElementById('preview');
             const progressBar = document.getElementById('progressBar');
             const progressContainer = document.getElementById('progressContainer');
@@ -32,7 +43,6 @@
             preview.innerHTML = '';
             processedImages = [];
             
-            if (files.length === 0) return;
             progressContainer.style.display = 'block';
             progressBar.style.width = '0%';
             
@@ -62,20 +72,16 @@
                         ctx.drawImage(watermark, x, y, wmWidth, wmHeight);
                         ctx.globalAlpha = 1;
                         
-                        const resultImg = new Image();
-                        resultImg.src = canvas.toDataURL('image/png');
-                        processedImages.push(resultImg.src);
+                        const resultImg = canvas.toDataURL('image/png');
+                        processedImages.push(resultImg);
                         
                         const container = document.createElement('div');
                         container.classList.add('image-container');
-                        container.appendChild(resultImg);
                         
-                        const downloadLink = document.createElement('a');
-                        downloadLink.href = canvas.toDataURL('image/png');
-                        downloadLink.download = 'watermarked.png';
-                        downloadLink.textContent = 'Download';
+                        const imageElement = new Image();
+                        imageElement.src = resultImg;
+                        container.appendChild(imageElement);
                         
-                        container.appendChild(downloadLink);
                         preview.appendChild(container);
                         
                         processed++;
@@ -92,11 +98,24 @@
             });
         }
 
+        function showErrorWindow() {
+            document.getElementById('errorWindow').style.display = 'block';
+        }
+
+        function closeErrorWindow() {
+            document.getElementById('errorWindow').style.display = 'none';
+        }
+
         function downloadAll() {
+            let zip = new JSZip();
             processedImages.forEach((dataUrl, index) => {
-                const link = document.createElement('a');
-                link.href = dataUrl;
-                link.download = `watermarked_${index + 1}.png`;
+                let imgData = dataUrl.split(',')[1]; // Remove data URL prefix
+                zip.file(`watermarked_${index + 1}.png`, imgData, {base64: true});
+            });
+            zip.generateAsync({type: "blob"}).then(function(content) {
+                let link = document.createElement("a");
+                link.href = URL.createObjectURL(content);
+                link.download = "watermarked_images.zip";
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
