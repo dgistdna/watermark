@@ -9,7 +9,7 @@
 </head>
 <body>
     <div class="center-container">
-        <h2>Image Watermark Tool</h2>
+        <h2>DNA 워터마크 생성기 1.2</h2>
         <input type="file" id="imageInput" multiple accept="image/*">
         <button onclick="processImages()">워터마크 추가</button>
         <button id="downloadAll" style="display:none;" onclick="downloadAll()">전체 다운로드(zip)</button>
@@ -24,7 +24,7 @@
 
     <script>
         let watermark = new Image();
-        watermark.src = 'watermark.png';  // Sample watermark image
+        watermark.src = 'watermark_white.png';  // Sample watermark image
         watermark.onload = () => console.log("Watermark loaded");
 
         let processedImages = [];
